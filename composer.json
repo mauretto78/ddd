@@ -11,6 +11,7 @@
         }
     ],
     "require": {
+        "php": ">=5.6.0",
         "doctrine/orm": "^2.5",
         "ramsey/uuid": "^3.6",
         "beberlei/assert": "^2.7"

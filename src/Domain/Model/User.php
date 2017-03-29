@@ -40,16 +40,16 @@ class User
     )
     {
         $this->userId = $userId;
-        $this->setName($name);
-        $this->setEmail($email);
-        $this->setUsername($username);
-        $this->setPassword($password);
+        $this->_setName($name);
+        $this->_setEmail($email);
+        $this->_setUsername($username);
+        $this->_setPassword($password);
     }
 
     /**
      * @return UserId
      */
-    public function getUserId(): UserId
+    public function getUserId()
     {
         return $this->userId;
     }
@@ -57,7 +57,7 @@ class User
     /**
      * @return string
      */
-    public function getName(): string
+    public function getName()
     {
         return $this->name;
     }
@@ -65,7 +65,7 @@ class User
     /**
      * @param string $name
      */
-    public function setName(string $name)
+    private function _setName($name)
     {
         $this->name = $name;
     }
@@ -73,7 +73,7 @@ class User
     /**
      * @return string
      */
-    public function getEmail(): string
+    public function getEmail()
     {
         return $this->email;
     }
@@ -81,7 +81,7 @@ class User
     /**
      * @param string $email
      */
-    public function setEmail(string $email)
+    private function _setEmail($email)
     {
         $email = trim($email);
 
@@ -97,7 +97,7 @@ class User
     /**
      * @return string
      */
-    public function getUsername(): string
+    public function getUsername()
     {
         return $this->username;
     }
@@ -105,7 +105,7 @@ class User
     /**
      * @param string $username
      */
-    public function setUsername(string $username)
+    private function _setUsername($username)
     {
         $username = trim($username);
 
@@ -122,7 +122,7 @@ class User
     /**
      * @return string
      */
-    public function getPassword(): string
+    public function getPassword()
     {
         return $this->password;
     }
@@ -130,7 +130,7 @@ class User
     /**
      * @param string $password
      */
-    public function setPassword(string $password)
+    private function _setPassword($password)
     {
         $password = trim($password);
 

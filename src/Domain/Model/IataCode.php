@@ -4,7 +4,7 @@ namespace Mauretto78\DDD\Domain\Model;
 
 use Assert\Assertion;
 
-class AirlineCode
+class IataCode
 {
     /**
      * @var
