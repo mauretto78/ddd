@@ -1,7 +1,7 @@
 {
     "name": "mauretto78/ddd",
-    "description": "DDD Demo Project",
-    "keywords": ["DDD"],
+    "description": "CQRS with DDD architecture - Demo Project",
+    "keywords": ["CQRS", "DDD", "Event-sourcing"],
     "license": "MIT",
     "version": "1.1.0",
     "authors": [
@@ -12,9 +12,11 @@
     ],
     "require": {
         "php": ">=5.6.0",
-        "doctrine/orm": "^2.5",
+        "beberlei/assert": "^2.7",
+        "mauretto78/simple-event-store-manager": "^2.0",
+        "mhytry/simplebus-commandbus-silex-provider": "dev-master",
         "ramsey/uuid": "^3.6",
-        "beberlei/assert": "^2.7"
+        "silex/silex": "~2.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^5.2",

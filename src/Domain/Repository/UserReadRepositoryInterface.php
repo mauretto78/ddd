@@ -2,7 +2,7 @@
 
 namespace Mauretto78\DDD\Domain\Repository;
 
-interface UserRepositoryInterface
+interface UserReadRepositoryInterface
 {
     public function findByUsername($username);
 
