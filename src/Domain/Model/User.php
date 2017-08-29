@@ -3,9 +3,12 @@
 namespace Mauretto78\DDD\Domain\Model;
 
 use Assert\Assertion;
+use SimpleEventStoreManager\Domain\EventRecorder\EventRecorderCapabilities;
 
 class User
 {
+    use EventRecorderCapabilities;
+
     /**
      * @var UserId
      */
@@ -19,37 +22,71 @@ class User
     /**
      * @var string
      */
+    private $last_name;
+
+    /**
+     * @var string
+     */
     private $email;
 
     /**
-     * @var string
+     * User constructor.
+     * @param UserId $userId
+     * @param $name
+     * @param $last_name
+     * @param $email
      */
-    private $username;
-
-    /**
-     * @var string
-     */
-    private $password;
-
-    public function __construct(
+    private function __construct(
         UserId $userId,
         $name,
-        $email,
-        $username,
-        $password
+        $last_name,
+        $email
     )
     {
         $this->userId = $userId;
-        $this->_setName($name);
-        $this->_setEmail($email);
-        $this->_setUsername($username);
-        $this->_setPassword($password);
+        $this->setName($name);
+        $this->setLastName($last_name);
+        $this->setEmail($email);
+    }
+
+    /**
+     * @param UserId $userId
+     * @param $name
+     * @param $last_name
+     * @param $email
+     * @return User
+     */
+    public static function create(
+        UserId $userId,
+        $name,
+        $last_name,
+        $email
+    )
+    {
+        self::record(
+            new UserWasCreated(
+                [
+                    'aggregate' => 'user-'. (string)$userId,
+                    'id' => $userId,
+                    'name' => $name,
+                    'last_name' => $last_name,
+                    'email' => $email
+                ]
+            )
+        );
+
+        return new self(
+            $userId,
+            $name,
+            $last_name,
+            $email
+        );
     }
 
     /**
      * @return UserId
      */
-    public function getUserId()
+    public function userId()
     {
         return $this->userId;
     }
@@ -57,7 +94,7 @@ class User
     /**
      * @return string
      */
-    public function getName()
+    public function name()
     {
         return $this->name;
     }
@@ -65,7 +102,7 @@ class User
     /**
      * @param string $name
      */
-    private function _setName($name)
+    private function setName($name)
     {
         $this->name = $name;
     }
@@ -73,7 +110,23 @@ class User
     /**
      * @return string
      */
-    public function getEmail()
+    public function lastName()
+    {
+        return $this->last_name;
+    }
+
+    /**
+     * @param string $last_name
+     */
+    private function setLastName($last_name)
+    {
+        $this->last_name = $last_name;
+    }
+
+    /**
+     * @return string
+     */
+    public function email()
     {
         return $this->email;
     }
@@ -81,7 +134,7 @@ class User
     /**
      * @param string $email
      */
-    private function _setEmail($email)
+    private function setEmail($email)
     {
         $email = trim($email);
 
@@ -92,56 +145,5 @@ class User
         Assertion::email($email);
 
         $this->email = $email;
-    }
-
-    /**
-     * @return string
-     */
-    public function getUsername()
-    {
-        return $this->username;
-    }
-
-    /**
-     * @param string $username
-     */
-    private function _setUsername($username)
-    {
-        $username = trim($username);
-
-        if(!$username){
-            throw new \InvalidArgumentException('username not provided');
-        }
-
-        Assertion::notEmpty($username);
-        Assertion::notBlank($username);
-
-        $this->username = $username;
-    }
-
-    /**
-     * @return string
-     */
-    public function getPassword()
-    {
-        return $this->password;
-    }
-
-    /**
-     * @param string $password
-     */
-    private function _setPassword($password)
-    {
-        $password = trim($password);
-
-        if(!$password){
-            throw new \InvalidArgumentException('password not provided');
-        }
-
-        Assertion::notEmpty($password);
-        Assertion::notBlank($password);
-        Assertion::betweenLength($password, 4, 10);
-
-        $this->password = $password;
     }
 }

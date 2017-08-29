@@ -4,6 +4,7 @@ use Mauretto78\DDD\Application\Command\CreateUserCommand;
 use Mauretto78\DDD\Application\Command\CreateUserCommandHandler;
 use Mauretto78\DDD\Domain\Model\UserId;
 use Mhytry\Silex\SimpleBus\CommandBus\CommandBusServiceProvider;
+use SimpleEventStoreManager\Application\Event\EventManager;
 use Symfony\Component\HttpFoundation\Request;
 
 require __DIR__.'/../../../../vendor/autoload.php';
@@ -13,15 +14,25 @@ $app = new Silex\Application();
 $app['env'] = 'dev';
 
 // Service container
+$app['event_manager'] = function ($app) {
+    return EventManager::build()
+        ->setDriver('mongo')
+        ->setConnection([
+            'host' => 'localhost',
+            'port' => 27017,
+        ]);
+};
 
 // Command-bus map
 $app->register(new CommandBusServiceProvider(), [
     'simplebus.commandbus.command_to_handler_map' => [
-        CreateUserCommand::class => new CreateUserCommandHandler()
+        CreateUserCommand::class => new CreateUserCommandHandler($app['event_manager'])
     ]
 ]);
 
 // Event-bus map
+
+// Projectors map
 
 // Controllers
 
