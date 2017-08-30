@@ -36,7 +36,7 @@ class User
      * @param $last_name
      * @param $email
      */
-    private function __construct(
+    public function __construct(
         UserId $userId,
         $name,
         $last_name,
@@ -47,23 +47,8 @@ class User
         $this->setName($name);
         $this->setLastName($last_name);
         $this->setEmail($email);
-    }
 
-    /**
-     * @param UserId $userId
-     * @param $name
-     * @param $last_name
-     * @param $email
-     * @return User
-     */
-    public static function create(
-        UserId $userId,
-        $name,
-        $last_name,
-        $email
-    )
-    {
-        self::record(
+        $this->record(
             new UserWasCreated(
                 [
                     'aggregate' => 'user-'. (string)$userId,
@@ -73,13 +58,6 @@ class User
                     'email' => $email
                 ]
             )
-        );
-
-        return new self(
-            $userId,
-            $name,
-            $last_name,
-            $email
         );
     }
 

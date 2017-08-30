@@ -1,9 +1,9 @@
 <?php
 
+use Broadway\CommandHandling\SimpleCommandBus;
 use Mauretto78\DDD\Application\Command\CreateUserCommand;
 use Mauretto78\DDD\Application\Command\CreateUserCommandHandler;
 use Mauretto78\DDD\Domain\Model\UserId;
-use Mhytry\Silex\SimpleBus\CommandBus\CommandBusServiceProvider;
 use SimpleEventStoreManager\Application\Event\EventManager;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -24,11 +24,12 @@ $app['event_manager'] = function ($app) {
 };
 
 // Command-bus map
-$app->register(new CommandBusServiceProvider(), [
-    'simplebus.commandbus.command_to_handler_map' => [
-        CreateUserCommand::class => new CreateUserCommandHandler($app['event_manager'])
-    ]
-]);
+$app['command_bus'] = function ($app) {
+    $commandBus = new SimpleCommandBus();
+    $commandBus->subscribe(new CreateUserCommandHandler($app['event_manager']));
+
+    return $commandBus;
+};
 
 // Event-bus map
 
@@ -48,18 +49,24 @@ $app->get('/user', function (Request $request) use ($app) {
 
 $app->post('/user', function (Request $request) use ($app) {
 
-    $createUser = new CreateUserCommand(
+    $createNewUser = new CreateUserCommand(
         new UserId,
         $request->request->get('name'),
         $request->request->get('last_name'),
         $request->request->get('email')
     );
 
-    $app['simplebus.commandbus']->handle($createUser);
+    try {
+        $app['command_bus']->dispatch($createNewUser);
 
-    return $app->json([
-
-    ]);
+        return $app->json([
+            'id' => (string) $createNewUser->id()
+        ], \Symfony\Component\HttpFoundation\Response::HTTP_OK);
+    } catch (\Exception $e){
+        return $app->json([
+            'error' => $e->getMessage()
+        ], \Symfony\Component\HttpFoundation\Response::HTTP_INTERNAL_SERVER_ERROR);
+    }
 });
 
 $app->put('/user/{id}', function (Request $request, $id) use ($app) {
