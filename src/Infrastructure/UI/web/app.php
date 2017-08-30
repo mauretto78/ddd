@@ -1,6 +1,5 @@
 <?php
 
-use Broadway\CommandHandling\SimpleCommandBus;
 use League\Tactician\CommandBus;
 use League\Tactician\Handler\CommandHandlerMiddleware;
 use League\Tactician\Handler\CommandNameExtractor\ClassNameExtractor;
@@ -12,6 +11,8 @@ use Mauretto78\DDD\Application\Query\UserQuery;
 use Mauretto78\DDD\Application\Query\UserQueryHanlder;
 use Mauretto78\DDD\Domain\Model\UserId;
 
+use Mauretto78\DDD\Domain\Model\UserWasCreated;
+use Mauretto78\DDD\Infrastructure\Persistance\Projection\UserProjector;
 use SimpleEventStoreManager\Application\Event\EventManager;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -40,6 +41,21 @@ $app['command_bus'] = function ($app) {
     $locator = new InMemoryLocator();
 
     $locator->addHandler(new CreateUserCommandHandler($app['event_manager']), CreateUserCommand::class);
+
+    $handlerMiddleware = new CommandHandlerMiddleware (
+        new ClassNameExtractor(),
+        $locator,
+        new HandleInflector()
+    );
+
+    return new CommandBus([$handlerMiddleware]);
+};
+
+// Event-bus map
+$app['event_bus'] = function ($app) {
+    $locator = new InMemoryLocator();
+
+    $locator->addHandler(new UserProjector(), UserWasCreated::class);
 
     $handlerMiddleware = new CommandHandlerMiddleware (
         new ClassNameExtractor(),
@@ -89,7 +105,8 @@ $app->post('/user', function (Request $request) use ($app) {
     );
 
     try {
-        $app['command_bus']->handle($createNewUser);
+        $userWasCreated = $app['command_bus']->handle($createNewUser);
+        $app['event_bus']->handle(array_shift($userWasCreated));
 
         return $app->json([
             'id' => (string) $createNewUser->id()

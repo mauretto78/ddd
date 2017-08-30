@@ -25,6 +25,7 @@ class CreateUserCommandHandler
 
     /**
      * @param CreateUserCommand $command
+     * @return EventInterface[]
      */
     public function handle(CreateUserCommand $command)
     {
@@ -35,7 +36,11 @@ class CreateUserCommandHandler
             $command->email()
         );
 
-        $this->storeEvents($command->id(), $user->releaseEvents());
+        $newUser = $user->releaseEvents();
+
+        $this->storeEvents($command->id(), $newUser);
+
+        return $newUser;
     }
 
     /**
