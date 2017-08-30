@@ -16,7 +16,7 @@
         "mauretto78/simple-event-store-manager": "^2.0",
         "ramsey/uuid": "^3.6",
         "silex/silex": "~2.0",
-        "broadway/broadway": "^1.1"
+        "league/tactician": "^1.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^5.2",

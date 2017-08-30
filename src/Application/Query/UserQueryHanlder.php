@@ -2,10 +2,9 @@
 
 namespace Mauretto78\DDD\Application\Query;
 
-use Broadway\CommandHandling\SimpleCommandHandler;
 use Mauretto78\DDD\Domain\Repository\UserReadRepositoryInterface;
 
-class UserQueryHanlder extends SimpleCommandHandler
+class UserQueryHanlder
 {
     /**
      * @var UserReadRepositoryInterface
@@ -20,7 +19,7 @@ class UserQueryHanlder extends SimpleCommandHandler
     /**
      * @param UserQuery $userQuery
      */
-    public function handleUserQuery(UserQuery $userQuery)
+    public function handle(UserQuery $userQuery)
     {
         return $this->repo->find($userQuery->id());
     }

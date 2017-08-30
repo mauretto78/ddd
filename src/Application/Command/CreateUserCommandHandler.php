@@ -2,13 +2,12 @@
 
 namespace Mauretto78\DDD\Application\Command;
 
-use Broadway\CommandHandling\SimpleCommandHandler;
 use Mauretto78\DDD\Domain\Model\User;
 use Mauretto78\DDD\Domain\Model\UserId;
 use SimpleEventStoreManager\Application\Event\EventManager;
 use SimpleEventStoreManager\Domain\Model\Contracts\EventInterface;
 
-class CreateUserCommandHandler extends SimpleCommandHandler
+class CreateUserCommandHandler
 {
     /**
      * @var EventManager
@@ -27,7 +26,7 @@ class CreateUserCommandHandler extends SimpleCommandHandler
     /**
      * @param CreateUserCommand $command
      */
-    public function handleCreateUserCommand(CreateUserCommand $command)
+    public function handle(CreateUserCommand $command)
     {
         $user = new User(
             $command->id(),

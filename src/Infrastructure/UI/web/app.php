@@ -1,6 +1,11 @@
 <?php
 
 use Broadway\CommandHandling\SimpleCommandBus;
+use League\Tactician\CommandBus;
+use League\Tactician\Handler\CommandHandlerMiddleware;
+use League\Tactician\Handler\CommandNameExtractor\ClassNameExtractor;
+use League\Tactician\Handler\Locator\InMemoryLocator;
+use League\Tactician\Handler\MethodNameInflector\HandleInflector;
 use Mauretto78\DDD\Application\Command\CreateUserCommand;
 use Mauretto78\DDD\Application\Command\CreateUserCommandHandler;
 use Mauretto78\DDD\Application\Query\UserQuery;
@@ -32,18 +37,32 @@ $app['user_read_repo'] = function ($app) {
 
 // Command-bus map
 $app['command_bus'] = function ($app) {
-    $commandBus = new SimpleCommandBus();
-    $commandBus->subscribe(new CreateUserCommandHandler($app['event_manager']));
+    $locator = new InMemoryLocator();
 
-    return $commandBus;
+    $locator->addHandler(new CreateUserCommandHandler($app['event_manager']), CreateUserCommand::class);
+
+    $handlerMiddleware = new CommandHandlerMiddleware (
+        new ClassNameExtractor(),
+        $locator,
+        new HandleInflector()
+    );
+
+    return new CommandBus([$handlerMiddleware]);
 };
 
 // Query-bus map
 $app['query_bus'] = function ($app) {
-    $queryBus = new SimpleCommandBus();
-    $queryBus->subscribe(new UserQueryHanlder($app['user_read_repo']));
+    $locator = new InMemoryLocator();
 
-    return $queryBus;
+    $locator->addHandler(new UserQueryHanlder($app['user_read_repo']), UserQuery::class);
+
+    $handlerMiddleware = new CommandHandlerMiddleware (
+        new ClassNameExtractor(),
+        $locator,
+        new HandleInflector()
+    );
+
+    return new CommandBus([$handlerMiddleware]);
 };
 
 // Projectors map
@@ -70,7 +89,7 @@ $app->post('/user', function (Request $request) use ($app) {
     );
 
     try {
-        $app['command_bus']->dispatch($createNewUser);
+        $app['command_bus']->handle($createNewUser);
 
         return $app->json([
             'id' => (string) $createNewUser->id()
@@ -87,7 +106,7 @@ $app->get('/user/{id}', function (Request $request, $id) use ($app) {
     $userQuery = new UserQuery(new UserId($id));
 
     return $app->json([
-        'message' => $app['query_bus']->dispatch($userQuery)
+        'message' => $app['query_bus']->handle($userQuery)
     ]);
 });
 
