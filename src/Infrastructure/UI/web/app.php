@@ -3,7 +3,10 @@
 use Broadway\CommandHandling\SimpleCommandBus;
 use Mauretto78\DDD\Application\Command\CreateUserCommand;
 use Mauretto78\DDD\Application\Command\CreateUserCommandHandler;
+use Mauretto78\DDD\Application\Query\UserQuery;
+use Mauretto78\DDD\Application\Query\UserQueryHanlder;
 use Mauretto78\DDD\Domain\Model\UserId;
+
 use SimpleEventStoreManager\Application\Event\EventManager;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -23,6 +26,10 @@ $app['event_manager'] = function ($app) {
         ]);
 };
 
+$app['user_read_repo'] = function ($app) {
+    return new \Mauretto78\DDD\Infrastructure\Persistance\ReadModel\UserReadRepository();
+};
+
 // Command-bus map
 $app['command_bus'] = function ($app) {
     $commandBus = new SimpleCommandBus();
@@ -31,7 +38,13 @@ $app['command_bus'] = function ($app) {
     return $commandBus;
 };
 
-// Event-bus map
+// Query-bus map
+$app['query_bus'] = function ($app) {
+    $queryBus = new SimpleCommandBus();
+    $queryBus->subscribe(new UserQueryHanlder($app['user_read_repo']));
+
+    return $queryBus;
+};
 
 // Projectors map
 
@@ -69,13 +82,12 @@ $app->post('/user', function (Request $request) use ($app) {
     }
 });
 
-$app->put('/user/{id}', function (Request $request, $id) use ($app) {
-
-});
-
 $app->get('/user/{id}', function (Request $request, $id) use ($app) {
+
+    $userQuery = new UserQuery(new UserId($id));
+
     return $app->json([
-        'message' => $id
+        'message' => $app['query_bus']->dispatch($userQuery)
     ]);
 });
 
