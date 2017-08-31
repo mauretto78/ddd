@@ -8,11 +8,11 @@ use League\Tactician\Handler\MethodNameInflector\HandleInflector;
 use Mauretto78\DDD\Application\Command\CreateUserCommand;
 use Mauretto78\DDD\Application\Command\CreateUserCommandHandler;
 use Mauretto78\DDD\Application\Query\UserQuery;
-use Mauretto78\DDD\Application\Query\UserQueryHanlder;
+use Mauretto78\DDD\Application\Query\UserQueryHandler;
 use Mauretto78\DDD\Domain\Model\UserId;
-
 use Mauretto78\DDD\Domain\Model\UserWasCreated;
 use Mauretto78\DDD\Infrastructure\Persistance\Projection\UserProjector;
+use Mauretto78\DDD\Infrastructure\Persistance\ReadModel\UserReadRepository;
 use SimpleEventStoreManager\Application\Event\EventManager;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -21,6 +21,15 @@ require __DIR__.'/../../../../vendor/autoload.php';
 // instantiate Application
 $app = new Silex\Application();
 $app['env'] = 'dev';
+
+// DBAL
+$app->register(new Silex\Provider\DoctrineServiceProvider(), array(
+    'db.options' => array(
+        'driver'   => 'pdo_sqlite',
+        'path'     => __DIR__.'/../../../../db/app.db',
+    ),
+));
+
 
 // Service container
 $app['event_manager'] = function ($app) {
@@ -33,14 +42,18 @@ $app['event_manager'] = function ($app) {
 };
 
 $app['user_read_repo'] = function ($app) {
-    return new \Mauretto78\DDD\Infrastructure\Persistance\ReadModel\UserReadRepository();
+    return new UserReadRepository($app['db']);
 };
 
-// Command-bus map
+// Command-bus
 $app['command_bus'] = function ($app) {
     $locator = new InMemoryLocator();
 
+    // Commands
     $locator->addHandler(new CreateUserCommandHandler($app['event_manager']), CreateUserCommand::class);
+
+    // Event projections
+    $locator->addHandler(new UserProjector($app['db']), UserWasCreated::class);
 
     $handlerMiddleware = new CommandHandlerMiddleware (
         new ClassNameExtractor(),
@@ -51,11 +64,12 @@ $app['command_bus'] = function ($app) {
     return new CommandBus([$handlerMiddleware]);
 };
 
-// Event-bus map
+// Event-bus
 $app['event_bus'] = function ($app) {
     $locator = new InMemoryLocator();
 
-    $locator->addHandler(new UserProjector(), UserWasCreated::class);
+    // Events
+    $locator->addHandler(new UserQueryHandler($app['user_read_repo']), UserQuery::class);
 
     $handlerMiddleware = new CommandHandlerMiddleware (
         new ClassNameExtractor(),
@@ -65,26 +79,8 @@ $app['event_bus'] = function ($app) {
 
     return new CommandBus([$handlerMiddleware]);
 };
-
-// Query-bus map
-$app['query_bus'] = function ($app) {
-    $locator = new InMemoryLocator();
-
-    $locator->addHandler(new UserQueryHanlder($app['user_read_repo']), UserQuery::class);
-
-    $handlerMiddleware = new CommandHandlerMiddleware (
-        new ClassNameExtractor(),
-        $locator,
-        new HandleInflector()
-    );
-
-    return new CommandBus([$handlerMiddleware]);
-};
-
-// Projectors map
 
 // Controllers
-
 $app->get('/', function (Request $request) use ($app) {
     return $app->json([
         'message' => 'It Works!'
@@ -106,7 +102,7 @@ $app->post('/user', function (Request $request) use ($app) {
 
     try {
         $userWasCreated = $app['command_bus']->handle($createNewUser);
-        $app['event_bus']->handle(array_shift($userWasCreated));
+        $app['command_bus']->handle(array_shift($userWasCreated));
 
         return $app->json([
             'id' => (string) $createNewUser->id()
@@ -121,9 +117,10 @@ $app->post('/user', function (Request $request) use ($app) {
 $app->get('/user/{id}', function (Request $request, $id) use ($app) {
 
     $userQuery = new UserQuery(new UserId($id));
+    $user = $app['event_bus']->handle($userQuery);
 
     return $app->json([
-        'message' => $app['query_bus']->handle($userQuery)
+        'data' => $user
     ]);
 });
 

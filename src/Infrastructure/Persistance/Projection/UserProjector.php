@@ -3,9 +3,8 @@
 namespace Mauretto78\DDD\Infrastructure\Persistance\Projection;
 
 use Mauretto78\DDD\Domain\Model\UserWasCreated;
-use SimpleEventStoreManager\Infrastructure\Projector\Projector;
 
-class UserProjector extends Projector
+class UserProjector extends AbstractProjector
 {
     /**
      * @return array
@@ -19,11 +18,21 @@ class UserProjector extends Projector
 
     public function applyUserWasCreated(UserWasCreated $userWasCreated)
     {
-        echo 'ciao da applyUserWasCreated';
+        $userArray = $userWasCreated->body();
+        $this->db->insert(
+            'users',
+            [
+                'id' => $userArray['id'],
+                'name' => $userArray['name'],
+                'last_name' => $userArray['last_name'],
+                'email' => $userArray['email'],
+            ]
+        );
     }
 
     public function rollbackUserWasCreated(UserWasCreated $userWasCreated)
     {
-        echo 'ciao';
+        $userArray = $userWasCreated->body();
+        $this->db->delete('users', ['id' => $userArray['id']]);
     }
 }
