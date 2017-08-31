@@ -28,9 +28,18 @@ class UserReadRepository implements UserReadRepositoryInterface
      */
     public function find(UserId $userId)
     {
-        $statement = $this->db->executeQuery('SELECT * FROM  `users` WHERE id = ?', [(string) $userId]);
+        $statement = $this->db->executeQuery('SELECT * FROM `users` WHERE id = ?', [(string) $userId]);
 
         return $statement->fetch();
     }
-}
 
+    /**
+     * @return mixed
+     */
+    public function findAll()
+    {
+        $statement = $this->db->executeQuery('SELECT * FROM `users` ');
+
+        return $statement->fetchAll();
+    }
+}

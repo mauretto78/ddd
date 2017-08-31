@@ -7,4 +7,6 @@ use Mauretto78\DDD\Domain\Model\UserId;
 interface UserReadRepositoryInterface
 {
     public function find(UserId $userId);
+
+    public function findAll();
 }

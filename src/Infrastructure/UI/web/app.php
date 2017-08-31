@@ -7,6 +7,8 @@ use League\Tactician\Handler\Locator\InMemoryLocator;
 use League\Tactician\Handler\MethodNameInflector\HandleInflector;
 use Mauretto78\DDD\Application\Command\CreateUserCommand;
 use Mauretto78\DDD\Application\Command\CreateUserCommandHandler;
+use Mauretto78\DDD\Application\Query\AllUsersQuery;
+use Mauretto78\DDD\Application\Query\AllUsersQueryHandler;
 use Mauretto78\DDD\Application\Query\UserQuery;
 use Mauretto78\DDD\Application\Query\UserQueryHandler;
 use Mauretto78\DDD\Domain\Model\UserId;
@@ -22,14 +24,13 @@ require __DIR__.'/../../../../vendor/autoload.php';
 $app = new Silex\Application();
 $app['env'] = 'dev';
 
-// DBAL
+// DBAL connection
 $app->register(new Silex\Provider\DoctrineServiceProvider(), array(
     'db.options' => array(
         'driver'   => 'pdo_sqlite',
         'path'     => __DIR__.'/../../../../db/app.db',
     ),
 ));
-
 
 // Service container
 $app['event_manager'] = function ($app) {
@@ -64,11 +65,12 @@ $app['command_bus'] = function ($app) {
     return new CommandBus([$handlerMiddleware]);
 };
 
-// Event-bus
-$app['event_bus'] = function ($app) {
+// Query-bus
+$app['query_bus'] = function ($app) {
     $locator = new InMemoryLocator();
 
-    // Events
+    // Queries
+    $locator->addHandler(new AllUsersQueryHandler($app['user_read_repo']), AllUsersQuery::class);
     $locator->addHandler(new UserQueryHandler($app['user_read_repo']), UserQuery::class);
 
     $handlerMiddleware = new CommandHandlerMiddleware (
@@ -88,11 +90,15 @@ $app->get('/', function (Request $request) use ($app) {
 });
 
 $app->get('/user', function (Request $request) use ($app) {
+    $usersQuery = new AllUsersQuery();
+    $users = $app['query_bus']->handle($usersQuery);
 
+    return $app->json([
+        'data' => $users
+    ]);
 });
 
 $app->post('/user', function (Request $request) use ($app) {
-
     $createNewUser = new CreateUserCommand(
         new UserId,
         $request->request->get('name'),
@@ -115,9 +121,8 @@ $app->post('/user', function (Request $request) use ($app) {
 });
 
 $app->get('/user/{id}', function (Request $request, $id) use ($app) {
-
     $userQuery = new UserQuery(new UserId($id));
-    $user = $app['event_bus']->handle($userQuery);
+    $user = $app['query_bus']->handle($userQuery);
 
     return $app->json([
         'data' => $user

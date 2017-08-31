@@ -28,11 +28,12 @@ abstract class AbstractProjector extends Projector
      */
     private function createSchema()
     {
-        $schema = new Schema();
-
-        if(false === $schema->hasTable('users')){
+        try {
+            $this->db->executeQuery('select count(*) from `users`');
+        } catch (\Exception $e) {
+            $schema = new Schema();
             $usersTable = $schema->createTable('users');
-            $usersTable->addColumn('id', 'integer', ['unsigned' => true]);
+            $usersTable->addColumn('id', 'string', ['length' => 64]);
             $usersTable->addColumn('name', 'string', ['length' => 64]);
             $usersTable->addColumn('last_name', 'string', ['length' => 64]);
             $usersTable->addColumn('email', 'string', ['length' => 256]);
